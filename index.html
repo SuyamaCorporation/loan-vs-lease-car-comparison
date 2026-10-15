@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Car Loan vs Lease Cost Comparison</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen p-4">
+<div class="max-w-4xl mx-auto">
+  <h1 class="text-2xl font-bold text-center mb-2 text-blue-400">Car Loan vs Lease Comparison</h1>
+  <p class="text-center text-gray-400 text-sm mb-2 italic">Educational tool only — not financial advice</p>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+    <!-- Loan -->
+    <div class="bg-gray-800 rounded p-4">
+      <h2 class="text-base font-semibold text-green-400 mb-3">Loan Parameters</h2>
+      <div class="space-y-3">
+        <div>
+          <label for="vehiclePrice" class="block text-xs text-gray-400 mb-1">Vehicle Price ($)</label>
+          <input type="number" id="vehiclePrice" value="35000" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm" aria-label="Vehicle price">
+        </div>
+        <div>
+          <label for="downPayment" class="block text-xs text-gray-400 mb-1">Down Payment ($)</label>
+          <input type="number" id="downPayment" value="5000" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm" aria-label="Down payment">
+        </div>
+        <div>
+          <label for="loanRate" class="block text-xs text-gray-400 mb-1">Annual Interest Rate (%)</label>
+          <input type="number" id="loanRate" value="5.5" step="0.1" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm" aria-label="Loan interest rate">
+        </div>
+        <div>
+          <label for="loanTermMonths" class="block text-xs text-gray-400 mb-1">Loan Term (months)</label>
+          <input type="number" id="loanTermMonths" value="60" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm" aria-label="Loan term in months">
+        </div>
+        <div>
+          <label for="residualValue" class="block text-xs text-gray-400 mb-1">Estimated Residual Value ($)</label>
+          <input type="number" id="residualValue" value="15000" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm" aria-label="Residual vehicle value">
+        </div>
+      </div>
+    </div>
+    <!-- Lease -->
+    <div class="bg-gray-800 rounded p-4">
+      <h2 class="text-base font-semibold text-blue-400 mb-3">Lease Parameters</h2>
+      <div class="space-y-3">
+        <div>
+          <label for="leaseDown" class="block text-xs text-gray-400 mb-1">Lease Down / Cap Cost Reduction ($)</label>
+          <input type="number" id="leaseDown" value="2000" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm" aria-label="Lease down payment">
+        </div>
+        <div>
+          <label for="leaseMonthly" class="block text-xs text-gray-400 mb-1">Monthly Lease Payment ($)</label>
+          <input type="number" id="leaseMonthly" value="450" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm" aria-label="Monthly lease payment">
+        </div>
+        <div>
+          <label for="leaseTermMonths" class="block text-xs text-gray-400 mb-1">Lease Term (months)</label>
+          <input type="number" id="leaseTermMonths" value="36" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm" aria-label="Lease term in months">
+        </div>
+        <div>
+          <label for="leaseBuyout" class="block text-xs text-gray-400 mb-1">Lease-End Buyout Option ($)</label>
+          <input type="number" id="leaseBuyout" value="18000" class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm" aria-label="Lease buyout price">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button onclick="calculate()" class="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded font-medium mb-4">Compare</button>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4" id="summary"></div>
+  <canvas id="chart" aria-label="Loan vs Lease cost comparison bar chart"></canvas>
+</div>
+
+<script>
+let chart = null;
+
+function calculate() {
+  const vp = parseFloat(document.getElementById('vehiclePrice').value);
+  const dp = parseFloat(document.getElementById('downPayment').value);
+  const rate = parseFloat(document.getElementById('loanRate').value) / 100 / 12;
+  const n = parseInt(document.getElementById('loanTermMonths').value);
+  const residual = parseFloat(document.getElementById('residualValue').value);
+  const leaseDown = parseFloat(document.getElementById('leaseDown').value);
+  const leaseMonthly = parseFloat(document.getElementById('leaseMonthly').value);
+  const leaseTerm = parseInt(document.getElementById('leaseTermMonths').value);
+  const leaseBuyout = parseFloat(document.getElementById('leaseBuyout').value);
+
+  // Loan calculation
+  const principal = vp - dp;
+  const monthlyLoan = rate === 0 ? principal/n : principal * rate * Math.pow(1+rate,n) / (Math.pow(1+rate,n) - 1);
+  const totalLoan = dp + monthlyLoan * n;
+  const totalInterest = monthlyLoan * n - principal;
+  const netLoanCost = totalLoan - residual; // After selling
+
+  // Lease calculation
+  const totalLease = leaseDown + leaseMonthly * leaseTerm;
+
+  const summary = document.getElementById('summary');
+  summary.innerHTML = `
+    <div class="bg-gray-800 rounded p-3 border-l-4 border-green-500">
+      <div class="text-xs text-gray-400 mb-1">Loan — Total Cost</div>
+      <div class="text-xl font-bold text-green-400">$${totalLoan.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',')}</div>
+      <div class="text-xs text-gray-400 mt-1">Monthly: $${monthlyLoan.toFixed(0)}</div>
+      <div class="text-xs text-gray-400">Interest: $${totalInterest.toFixed(0)}</div>
+      <div class="text-xs text-gray-400">Net (after sale): $${netLoanCost.toFixed(0)}</div>
+    </div>
+    <div class="bg-gray-800 rounded p-3 border-l-4 border-blue-500">
+      <div class="text-xs text-gray-400 mb-1">Lease — Total Cost</div>
+      <div class="text-xl font-bold text-blue-400">$${totalLease.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',')}</div>
+      <div class="text-xs text-gray-400 mt-1">Monthly: $${leaseMonthly}</div>
+      <div class="text-xs text-gray-400">Buyout option: $${leaseBuyout.toLocaleString()}</div>
+      <div class="text-xs text-gray-400">No asset ownership</div>
+    </div>
+    <div class="bg-gray-800 rounded p-3 border-l-4 border-yellow-500">
+      <div class="text-xs text-gray-400 mb-1">Verdict</div>
+      <div class="text-base font-bold ${netLoanCost < totalLease ? 'text-green-400' : 'text-blue-400'}">${netLoanCost < totalLease ? 'Loan wins (net)' : 'Lease cheaper upfront'}</div>
+      <div class="text-xs text-gray-400 mt-1">Difference: $${Math.abs(netLoanCost - totalLease).toFixed(0)}</div>
+      <div class="text-xs text-gray-500 mt-1">Loan builds equity; Lease offers flexibility</div>
+    </div>
+  `;
+
+  const ctx = document.getElementById('chart').getContext('2d');
+  if (chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Down Payment', 'Monthly Payments', 'Total Out-of-Pocket', 'Net Cost (after asset)'],
+      datasets: [
+        { label: 'Loan', data: [dp, monthlyLoan * n, totalLoan, netLoanCost], backgroundColor: '#22c55e' },
+        { label: 'Lease', data: [leaseDown, leaseMonthly * leaseTerm, totalLease, totalLease], backgroundColor: '#3b82f6' }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: '#e5e7eb' } } },
+      scales: {
+        y: { ticks: { color: '#9ca3af', callback: v => '$' + v.toLocaleString() }, grid: { color: '#374151' } },
+        x: { ticks: { color: '#9ca3af' }, grid: { color: '#374151' } }
+      }
+    }
+  });
+}
+
+calculate();
+</script>
+</body>
+</html>
